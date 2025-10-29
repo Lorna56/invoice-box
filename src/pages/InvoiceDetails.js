@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import ExportInvoice from '../components/ExportInvoice';
 
 const InvoiceDetails = () => {
   const [invoice, setInvoice] = useState(null);
@@ -92,7 +93,7 @@ const InvoiceDetails = () => {
           </button>
         </div>
         
-        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+        <div id="invoice-content" className="bg-white shadow-md rounded-lg p-6 mb-6">
           <div className="flex justify-between items-start mb-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">Invoice Details</h1>
@@ -207,6 +208,7 @@ const InvoiceDetails = () => {
             >
               Print Invoice
             </button>
+            <ExportInvoice invoiceId={invoice._id} />
           </div>
         </div>
 
