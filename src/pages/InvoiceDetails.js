@@ -15,24 +15,44 @@ const InvoiceDetails = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchInvoice = async () => {
-      try {
-        const response = await axios.get(`/api/invoices/${id}`);
-        setInvoice(response.data);
-        
-        // Fetch payments for this invoice
-        const paymentsResponse = await axios.get(`/api/invoices/${id}/payments`);
-        setPayments(paymentsResponse.data);
-        
-        setLoading(false);
-      } catch (err) {
-        setError('Failed to fetch invoice details');
-        setLoading(false);
-      }
-    };
+  const fetchInvoice = async () => {
+    try {
+      const response = await axios.get(`/api/invoices/${id}`);
+      setInvoice(response.data);
+      
+      // Fetch payments for this invoice
+      const paymentsResponse = await axios.get(`/api/invoices/${id}/payments`);
+      setPayments(paymentsResponse.data);
+      
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to fetch invoice details');
+      setLoading(false);
+    }
+  };
 
-    fetchInvoice();
-  }, [id]);
+  fetchInvoice();
+}, [id]);
+
+//   useEffect(() => {
+//     const fetchInvoice = async () => {
+//       try {
+//         const response = await axios.get(`/api/invoices/${id}`);
+//         setInvoice(response.data);
+        
+//         // Fetch payments for this invoice
+//         const paymentsResponse = await axios.get(`/api/invoices/${id}/payments`);
+//         setPayments(paymentsResponse.data);
+        
+//         setLoading(false);
+//       } catch (err) {
+//         setError('Failed to fetch invoice details');
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchInvoice();
+//   }, [id]);
 
   const handleStatusUpdate = async (newStatus) => {
     setStatusUpdateLoading(true);
