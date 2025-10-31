@@ -11,13 +11,25 @@ const Register = () => {
   const [role, setRole] = useState('provider');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isPasswordValid, setIsPasswordValid] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
   
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitAttempted(true);
     setError('');
+    setPasswordError('');
+    
+    // Check if password is valid
+    if (!isPasswordValid) {
+      setPasswordError('Please create a stronger password before continuing');
+      return;
+    }
+    
     setLoading(true);
     
     try {
@@ -39,6 +51,14 @@ const Register = () => {
       setError(err.message || 'Failed to register');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+    // Clear password error when user starts typing
+    if (passwordError) {
+      setPasswordError('');
     }
   };
 
@@ -98,9 +118,19 @@ const Register = () => {
                 required
                 placeholder="Create a password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={handlePasswordChange}
+                className={passwordError ? 'border-red-500' : ''}
               />
-              <PasswordStrength password={password} />
+              <PasswordStrength 
+                password={password} 
+                onValidationChange={setIsPasswordValid}
+                minStrength={60}
+                showError={submitAttempted && !isPasswordValid}
+                errorMessage="Password is too weak. Please make it stronger before continuing."
+              />
+              {passwordError && (
+                <p className="mt-1 text-sm text-red-600">{passwordError}</p>
+              )}
             </div>
             
             <div>
@@ -120,11 +150,20 @@ const Register = () => {
             <div>
               <button
                 type="submit"
-                disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                disabled={loading || !isPasswordValid}
+                className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
+                  isPasswordValid
+                    ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                    : 'bg-gray-400 cursor-not-allowed'
+                } focus:outline-none focus:ring-2 focus:ring-offset-2`}
               >
                 {loading ? 'Creating account...' : 'Create account'}
               </button>
+              {!isPasswordValid && password && (
+                <p className="mt-2 text-sm text-gray-500 text-center">
+                  Please create a stronger password to continue
+                </p>
+              )}
             </div>
           </form>
           
@@ -143,3 +182,4 @@ const Register = () => {
 };
 
 export default Register;
+
