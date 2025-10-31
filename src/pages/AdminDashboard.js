@@ -31,53 +31,59 @@ const AdminDashboard = () => {
   }
 
   if (error) {
-    return <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>;
+    return (
+      <div className="p-4 md:p-8 pt-16 md:pt-8">
+        <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Admin Dashboard</h1>
-      
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Users</h3>
-            <p className="text-3xl font-bold text-gray-900">{stats.users.total}</p>
-            <div className="mt-2 text-sm text-gray-600">
-              {stats.users.providers} Providers, {stats.users.purchasers} Purchasers
+    <div className="flex-1 p-4 md:p-8 pt-16 md:pt-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">Admin Dashboard</h1>
+        
+        {stats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+            <div className="bg-white p-4 md:p-6 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Users</h3>
+              <p className="text-2xl md:text-3xl font-bold text-gray-900">{stats.users.total}</p>
+              <div className="mt-2 text-sm text-gray-600">
+                {stats.users.providers} Providers, {stats.users.purchasers} Purchasers
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 md:p-6 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Invoices</h3>
+              <p className="text-2xl md:text-3xl font-bold text-gray-900">{stats.invoices.total}</p>
+              <div className="mt-2 text-sm text-gray-600">
+                {stats.invoices.paid} Paid, {stats.invoices.pending} Pending
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 md:p-6 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Revenue</h3>
+              <p className="text-2xl md:text-3xl font-bold text-green-600">
+                USD {stats.revenue.toFixed(2)}
+              </p>
+              <div className="mt-2 text-sm text-gray-600">From all paid invoices</div>
+            </div>
+            
+            <div className="bg-white p-4 md:p-6 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">Overdue Invoices</h3>
+              <p className="text-2xl md:text-3xl font-bold text-red-600">{stats.invoices.overdue}</p>
+              <div className="mt-2 text-sm text-gray-600">Require attention</div>
             </div>
           </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Invoices</h3>
-            <p className="text-3xl font-bold text-gray-900">{stats.invoices.total}</p>
-            <div className="mt-2 text-sm text-gray-600">
-              {stats.invoices.paid} Paid, {stats.invoices.pending} Pending
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Revenue</h3>
-            <p className="text-3xl font-bold text-green-600">
-              USD {stats.revenue.toFixed(2)}
-            </p>
-            <div className="mt-2 text-sm text-gray-600">From all paid invoices</div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Overdue Invoices</h3>
-            <p className="text-3xl font-bold text-red-600">{stats.invoices.overdue}</p>
-            <div className="mt-2 text-sm text-gray-600">Require attention</div>
-          </div>
-        </div>
-      )}
+        )}
 
-      <div className="bg-white shadow-md rounded-lg p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">System Overview</h2>
-        <p className="text-gray-600">
-          Welcome to the admin dashboard. From here, you can oversee the entire InvoiceBox platform.
-          Use the sidebar to navigate to different management sections.
-        </p>
+        <div className="bg-white shadow-md rounded-lg p-4 md:p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">System Overview</h2>
+          <p className="text-gray-600">
+            Welcome to the admin dashboard. From here, you can oversee the entire InvoiceBox platform.
+            Use the sidebar to navigate to different management sections.
+          </p>
+        </div>
       </div>
     </div>
   );
