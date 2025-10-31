@@ -10,49 +10,59 @@ const InvoiceDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-  const fetchInvoice = async () => {
-    try {
-      const response = await axios.get(`/api/invoices/${id}`);
-      setInvoice(response.data);
-      
-      // Fetch payments for this invoice
-      const paymentsResponse = await axios.get(`/api/invoices/${id}/payments`);
-      setPayments(paymentsResponse.data);
-      
+    // Don't fetch if ID is not available
+    if (!id) {
+      setError('Invoice ID is missing');
       setLoading(false);
-    } catch (err) {
-      setError('Failed to fetch invoice details');
-      setLoading(false);
+      return;
     }
-  };
 
-  fetchInvoice();
-}, [id]);
+    const fetchInvoice = async (attempt = 0) => {
+      try {
+        // Double-check ID is still available before making the request
+        if (!id) {
+          setError('Invoice ID is missing');
+          setLoading(false);
+          return;
+        }
 
-//   useEffect(() => {
-//     const fetchInvoice = async () => {
-//       try {
-//         const response = await axios.get(`/api/invoices/${id}`);
-//         setInvoice(response.data);
+        console.log('Fetching invoice with ID:', id); // Debug log
+        const response = await axios.get(`/api/invoices/${id}`);
+        setInvoice(response.data);
         
-//         // Fetch payments for this invoice
-//         const paymentsResponse = await axios.get(`/api/invoices/${id}/payments`);
-//         setPayments(paymentsResponse.data);
+        // Fetch payments for this invoice
+        const paymentsResponse = await axios.get(`/api/invoices/${id}/payments`);
+        setPayments(paymentsResponse.data);
         
-//         setLoading(false);
-//       } catch (err) {
-//         setError('Failed to fetch invoice details');
-//         setLoading(false);
-//       }
-//     };
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching invoice:', err);
+        
+        // If we haven't reached max retries and the error is a 404 or 500 (invoice might still be processing)
+        if (attempt < 3 && (err.response?.status === 404 || err.response?.status === 500)) {
+          setRetryCount(attempt + 1);
+          // Exponential backoff: wait longer with each retry
+          const delay = Math.pow(2, attempt) * 1000;
+          setTimeout(() => fetchInvoice(attempt + 1), delay);
+        } else {
+          // Provide more specific error message
+          const errorMessage = err.response ? 
+            `Error: ${err.response.status} - ${err.response.data.message || 'Failed to fetch invoice details'}` : 
+            'Network error: Failed to fetch invoice details';
+          setError(errorMessage);
+          setLoading(false);
+        }
+      }
+    };
 
-//     fetchInvoice();
-//   }, [id]);
+    fetchInvoice();
+  }, [id]);
 
   const handleStatusUpdate = async (newStatus) => {
     setStatusUpdateLoading(true);
@@ -88,14 +98,37 @@ const InvoiceDetails = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex flex-col justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        {retryCount > 0 && (
+          <p className="mt-4 text-gray-600">
+            Retrying to fetch invoice details... (Attempt {retryCount}/3)
+          </p>
+        )}
       </div>
     );
   }
 
   if (error || !invoice) {
-    return <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error || 'Invoice not found'}</div>;
+    return (
+      <div className="p-8">
+        <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+          {error || 'Invoice not found'}
+        </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        >
+          Try Again
+        </button>
+        <button
+          onClick={() => navigate(user?.role === 'provider' ? '/provider-dashboard' : '/purchaser-dashboard')}
+          className="ml-4 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        >
+          Back to Dashboard
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -295,5 +328,3 @@ const InvoiceDetails = () => {
 };
 
 export default InvoiceDetails;
-
-

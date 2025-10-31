@@ -33,11 +33,33 @@ const Login = () => {
         navigate('/');
       }
     } catch (err) {
-      setError(err.message || 'Failed to login');
+      // Handle different types of errors
+      let errorMessage = 'Failed to login';
+      
+      if (err.response && err.response.data) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
+
+  // Function to determine error type and styling
+  const getErrorType = (message) => {
+    if (message && message.includes('deactivated')) {
+      return 'deactivated';
+    } else if (message && message.includes('deleted')) {
+      return 'deleted';
+    } else {
+      return 'error';
+    }
+  };
+
+  const errorType = getErrorType(error);
 
   return (
     // This wrapper centers the content vertically and horizontally
@@ -49,7 +71,59 @@ const Login = () => {
           </h2>
         </div>
         <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-          {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>}
+          {error && (
+            <div className={`p-3 rounded mb-4 ${
+              errorType === 'deactivated' 
+                ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' 
+                : errorType === 'deleted'
+                ? 'bg-red-100 text-red-800 border border-red-300'
+                : 'bg-red-100 text-red-700'
+            }`}>
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  {errorType === 'deactivated' ? (
+                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  ) : errorType === 'deleted' ? (
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+                <div className="ml-3">
+                  <p className={`text-sm ${
+                    errorType === 'deactivated' 
+                      ? 'text-yellow-800' 
+                      : errorType === 'deleted'
+                      ? 'text-red-800'
+                      : 'text-red-700'
+                  }`}>
+                    {error}
+                  </p>
+                  {errorType === 'deactivated' && (
+                    <p className="mt-1 text-sm text-yellow-700">
+                      Please contact support if you believe this is an error.
+                    </p>
+                  )}
+                  {errorType === 'deleted' && (
+                    <div className="mt-2">
+                      <p className="text-sm text-red-700">
+                        This action is permanent. If you believe this is an error, please contact our support team immediately.
+                      </p>
+                      <p className="mt-1 text-xs text-red-600">
+                        Support: support@yourcompany.com
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -85,7 +159,7 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
               >
                 {loading ? 'Logging in...' : 'Sign in'}
               </button>
@@ -112,109 +186,3 @@ const Login = () => {
 };
 
 export default Login;
-
-// import React, { useState } from 'react';
-// import { Link, useNavigate } from 'react-router-dom';
-// import { useAuth } from '../contexts/AuthContext';
-// import PasswordInput from '../components/PasswordInput';
-
-// const Login = () => {
-//   const [email, setEmail] = useState('');
-//   const [password, setPassword] = useState('');
-//   const [error, setError] = useState('');
-//   const [loading, setLoading] = useState(false);
-  
-//   const { login } = useAuth();
-//   const navigate = useNavigate();
-
-//   // frontend/src/pages/Login.js
-
-// // ... (imports and component setup)
-
-// const handleSubmit = async (e) => {
-//   e.preventDefault();
-//   setError('');
-//   setLoading(true);
-  
-//   try {
-//     // Capture the user data returned from the login function
-//     const userData = await login(email, password);
-
-//     // Navigate to the correct dashboard based on the user's role
-//     if (userData.role === 'provider') {
-//       navigate('/provider-dashboard');
-//     } else if (userData.role === 'purchaser') {
-//       navigate('/purchaser-dashboard');
-//        } else if (userData.role === 'admin') { // <-- ADD THIS CHECK
-//       navigate('/admin-dashboard');
-//     } else {
-//       // Fallback to the landing page if the role is something unexpected
-//       navigate('/');
-//     }
-//   } catch (err) {
-//     setError(err.message || 'Failed to login');
-//   } finally {
-//     setLoading(false);
-//   }
-// };
-
-
-
-//   return (
-//     <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6 mt-10">
-//       <h2 className="text-2xl font-bold text-center mb-6">Login to InvoiceBox</h2>
-      
-//       {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>}
-      
-//       <form onSubmit={handleSubmit}>
-//         <div className="mb-4">
-//           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-//             Email
-//           </label>
-//           <input
-//             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-//             id="email"
-//             type="email"
-//             placeholder="Email"
-//             value={email}
-//             onChange={(e) => setEmail(e.target.value)}
-//             required
-//           />
-//         </div>
-        
-//         <PasswordInput
-//           id="password"
-//           label="Password"
-//           value={password}
-//           onChange={(e) => setPassword(e.target.value)}
-//           placeholder="Password"
-//           required
-//         />
-        
-//         <div className="flex items-center justify-between">
-//           <button
-//             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
-//             type="submit"
-//             disabled={loading}
-//           >
-//             {loading ? 'Logging in...' : 'Login'}
-//           </button>
-//         </div>
-//       </form>
-      
-//       <div className="mt-4 text-center">
-//   <p className="text-sm text-gray-600">
-//     <Link to="/forgot-password" className="text-blue-600 hover:text-blue-800">
-//       Forgot your password?
-//     </Link>
-//   </p>
-//   <p className="text-sm text-gray-600 mt-2">
-//     Don't have an account? <Link to="/register" className="text-blue-600 hover:text-blue-800">Register</Link>
-//   </p>
-// </div>
-//     </div>
-//   );
-// };
-
-// export default Login;
-

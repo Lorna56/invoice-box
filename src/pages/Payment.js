@@ -14,13 +14,31 @@ const Payment = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
   const { invoiceId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchInvoice = async () => {
+    // Don't fetch if invoiceId is not available
+    if (!invoiceId || invoiceId === 'undefined') {
+      console.error('Invoice ID is missing or undefined:', invoiceId);
+      setError('Invalid invoice ID. Please navigate to this page from the dashboard.');
+      setLoading(false);
+      return;
+    }
+
+    const fetchInvoice = async (attempt = 0) => {
       try {
+        // Double-check invoiceId is still available before making the request
+        if (!invoiceId || invoiceId === 'undefined') {
+          console.error('Invoice ID became undefined during fetch');
+          setError('Invalid invoice ID. Please navigate to this page from the dashboard.');
+          setLoading(false);
+          return;
+        }
+
+        console.log('Fetching invoice with ID:', invoiceId); // Debug log
         const response = await axios.get(`/api/invoices/${invoiceId}`);
         setInvoice(response.data);
         
@@ -38,8 +56,22 @@ const Payment = () => {
         
         setLoading(false);
       } catch (err) {
-        setError('Failed to fetch invoice details');
-        setLoading(false);
+        console.error('Error fetching invoice:', err);
+        
+        // If we haven't reached max retries and the error is a 404 or 500
+        if (attempt < 3 && (err.response?.status === 404 || err.response?.status === 500)) {
+          setRetryCount(attempt + 1);
+          // Exponential backoff: wait longer with each retry
+          const delay = Math.pow(2, attempt) * 1000;
+          setTimeout(() => fetchInvoice(attempt + 1), delay);
+        } else {
+          // Provide more specific error message
+          const errorMessage = err.response ? 
+            `Error: ${err.response.status} - ${err.response.data.message || 'Failed to fetch invoice details'}` : 
+            'Network error: Failed to fetch invoice details';
+          setError(errorMessage);
+          setLoading(false);
+        }
       }
     };
 
@@ -60,13 +92,51 @@ const Payment = () => {
     setError('');
 
     try {
-      await axios.post('/api/payments', {
+      // Double-check invoiceId before making the request
+      if (!invoiceId || invoiceId === 'undefined') {
+        throw new Error('Invalid invoice ID');
+      }
+
+      // Prepare payment data with all required fields
+      const paymentData = {
         invoice: invoiceId,
-        ...formData,
-      });
+        amount: parseFloat(formData.amount),
+        method: formData.method,
+        notes: formData.notes || '',
+      };
+
+      console.log('Submitting payment data:', paymentData); // Debug log
+      
+      const response = await axios.post('/api/payments', paymentData);
+      
+      console.log('Payment response:', response.data); // Debug log
+      
+      // Wait a moment for the backend to process the payment
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Navigate to the invoice details page
+      console.log('Navigating to invoice with ID:', invoiceId);
       navigate(`/invoice/${invoiceId}`);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to process payment');
+      console.error('Error processing payment:', err);
+      
+      // Log detailed error information
+      if (err.response) {
+        console.error('Error response data:', err.response.data);
+        console.error('Error response status:', err.response.status);
+      }
+      
+      // Provide a more specific error message
+      let errorMessage = 'Failed to process payment';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
       setSubmitting(false);
     }
   };
@@ -78,14 +148,37 @@ const Payment = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex flex-col justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        {retryCount > 0 && (
+          <p className="mt-4 text-gray-600">
+            Retrying to fetch invoice details... (Attempt {retryCount}/3)
+          </p>
+        )}
       </div>
     );
   }
 
   if (error || !invoice) {
-    return <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error || 'Invoice not found'}</div>;
+    return (
+      <div className="p-8">
+        <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+          {error || 'Invoice not found'}
+        </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        >
+          Try Again
+        </button>
+        <button
+          onClick={() => navigate(user?.role === 'provider' ? '/provider-dashboard' : '/purchaser-dashboard')}
+          className="ml-4 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        >
+          Back to Dashboard
+        </button>
+      </div>
+    );
   }
 
   const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);

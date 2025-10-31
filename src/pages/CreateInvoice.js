@@ -118,9 +118,22 @@ const CreateInvoice = () => {
         total,
       };
 
+      console.log('Sending invoice data:', invoiceData);
       const response = await axios.post('/api/invoices', invoiceData);
-      navigate(`/invoice/${response.data._id}`);
+      console.log('API response:', response.data);
+      
+      // Try to get the ID from different possible fields
+      let invoiceId = response.data._id || response.data.id || response.data.invoice?._id;
+      
+      if (!invoiceId) {
+        console.error('No ID found in response:', response.data);
+        throw new Error('Invoice created but no ID returned from server');
+      }
+      
+      console.log('Navigating to invoice with ID:', invoiceId);
+      navigate(`/invoice/${invoiceId}`);
     } catch (err) {
+      console.error('Error creating invoice:', err);
       setError(err.response?.data?.message || 'Failed to create invoice');
       setLoading(false);
     }
